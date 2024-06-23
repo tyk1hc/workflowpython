@@ -1,0 +1,51 @@
+name: Deploy to Linux Server
+
+on:
+    push:
+      branches:
+        - main # The branch to trigger the deployment when you push a commit to it
+    workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest # If you are using Nginx server
+    environment: Development
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Remove Files on Nginx Server
+        uses: appleboy/ssh-action@master
+        env:
+          AZURE_VM_ADMINISTRATOR : ${{ secrets.AZURE_VM_ADMINISTRATOR }}
+          AZURE_VM_IP_ADDRESS : ${{ secrets.AZURE_VM_IP_ADDRESS }}
+          AZURE_VM_SSH_PRIVATE_KEY: ${{ secrets.AZURE_VM_SSH_PRIVATE_KEY }}
+        with:
+          # SSH host address.
+          host: ${{ env.AZURE_VM_IP_ADDRESS }}
+          # SSH username.
+          username: ${{ env.AZURE_VM_ADMINISTRATOR }}
+          # Path to the SSH private key file.
+          key: ${{ env.AZURE_VM_SSH_PRIVATE_KEY}}
+          # Commands to be executed.
+          script: |
+            mkdir -p testapppython
+            rm -rf testapppython/*
+
+      - name: Deploy Files to Nginx Server
+        uses: appleboy/scp-action@master
+        env:
+          AZURE_VM_ADMINISTRATOR : ${{ secrets.AZURE_VM_ADMINISTRATOR }}
+          AZURE_VM_IP_ADDRESS : ${{ secrets.AZURE_VM_IP_ADDRESS }}
+          AZURE_VM_SSH_PRIVATE_KEY: ${{ secrets.AZURE_VM_SSH_PRIVATE_KEY }}
+        with:
+          # SSH host address.
+          host: ${{ env.AZURE_VM_IP_ADDRESS }}
+          # SSH username.
+          username: ${{ env.AZURE_VM_ADMINISTRATOR }}
+          # Path to the SSH private key file.
+          key: ${{ env.AZURE_VM_SSH_PRIVATE_KEY}}
+          source: ./*
+          target: testapppython # Specify the path of the target folder on the server (e.g., /var/www/html/front/)
+          #strip_components: 2
